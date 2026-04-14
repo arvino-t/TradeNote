@@ -1,0 +1,9 @@
+# BUILDS Filter
+/*build*/*
+
+#IDE filter
+.idea/*
+.qt/*
+
+#Temp
+app/*
