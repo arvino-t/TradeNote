@@ -9,7 +9,7 @@
 
 class DataManager {
 public:
-    DataManager(const QString& data_dir = "app/data");
+    DataManager(const QString& data_dir = "", const QString& config_dir = "");
 
     QMap<QString, std::shared_ptr<Strategy>> loadAllStrategies();
     void saveAllStrategies(const QMap<QString, std::shared_ptr<Strategy>>& strategies);
@@ -19,8 +19,12 @@ public:
     QVariantMap loadConfig();
     void saveConfig(const QVariantMap& config);
 
+    QString getDataDir() const { return data_dir; }
+    void setDataDir(const QString& new_dir);
+
 private:
     QString data_dir;
+    QString config_dir;
 };
 
 #endif // DATA_MANAGER_H

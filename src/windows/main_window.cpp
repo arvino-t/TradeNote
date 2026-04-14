@@ -17,7 +17,7 @@
 #include <QStandardPaths>
 #include "version.h"
 
-MainWindow::MainWindow() : data_manager(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)) {
+MainWindow::MainWindow() : data_manager() {
     setWindowTitle(QString("%1 %2").arg(PROJECT_NAME).arg(PROJECT_VERSION));
     setWindowIcon(get_app_icon());
     resize(900, 600);
@@ -339,17 +339,23 @@ void MainWindow::updateUIState() const
 
 void MainWindow::onSettingsClicked() {
     SettingsDialog dialog(this);
-    dialog.setSelectedSettings(current_theme, current_font, current_language);
+    dialog.setSelectedSettings(current_theme, current_font, current_language, data_manager.getDataDir());
     if (dialog.exec() == QDialog::Accepted) {
         auto settings = dialog.getSelectedSettings();
         current_theme = settings["theme"].toString();
         current_language = settings["language"].toString();
         current_font = QFont(settings["font"].toString());
+        QString new_data_dir = settings["data_dir"].toString();
         
         setFont(current_font);
         applyTheme(current_theme);
         
-        saveDeals();
+        if (new_data_dir != data_manager.getDataDir()) {
+            data_manager.setDataDir(new_data_dir);
+            loadDeals(); // Re-load everything from new directory
+        } else {
+            saveDeals();
+        }
     }
 }
 
@@ -386,6 +392,7 @@ void MainWindow::saveDeals() {
     config["theme"] = current_theme;
     config["language"] = current_language;
     config["font"] = current_font.toString();
+    config["data_dir"] = data_manager.getDataDir();
     data_manager.saveConfig(config);
 }
 

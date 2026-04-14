@@ -6,11 +6,42 @@
 #include <QJsonArray>
 #include <QTextStream>
 #include <QDebug>
+#include <QStandardPaths>
 
-DataManager::DataManager(const QString& data_dir) : data_dir(data_dir) {
-    QDir dir(data_dir);
+DataManager::DataManager(const QString& data_dir, const QString& config_dir) 
+    : data_dir(data_dir), config_dir(config_dir) {
+    
+    if (this->config_dir.isEmpty()) {
+        this->config_dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    }
+    
+    QDir cDir(this->config_dir);
+    if (!cDir.exists()) {
+        cDir.mkpath(".");
+    }
+
+    if (this->data_dir.isEmpty()) {
+        // Try to load data_dir from config if it's not provided
+        QVariantMap config = loadConfig();
+        if (config.contains("data_dir")) {
+            this->data_dir = config["data_dir"].toString();
+        } else {
+            this->data_dir = this->config_dir;
+        }
+    }
+    
+    QDir dir(this->data_dir);
     if (!dir.exists()) {
         dir.mkpath(".");
+        
+        // Initial migration/copy if app/data exists and new dir is empty
+        QDir legacyDir("app/data");
+        if (legacyDir.exists()) {
+            QStringList files = legacyDir.entryList(QDir::Files);
+            for (const QString& file : files) {
+                QFile::copy(legacyDir.filePath(file), dir.filePath(file));
+            }
+        }
     }
 }
 
@@ -199,7 +230,7 @@ void DataManager::deleteStrategyFiles(const QString& name) {
 }
 
 QVariantMap DataManager::loadConfig() {
-    QFile file(QDir(data_dir).filePath("config.json"));
+    QFile file(QDir(config_dir).filePath("config.json"));
     if (file.open(QIODevice::ReadOnly)) {
         QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
         return doc.object().toVariantMap();
@@ -208,9 +239,19 @@ QVariantMap DataManager::loadConfig() {
 }
 
 void DataManager::saveConfig(const QVariantMap& config) {
-    QFile file(QDir(data_dir).filePath("config.json"));
+    QFile file(QDir(config_dir).filePath("config.json"));
     if (file.open(QIODevice::WriteOnly)) {
         QJsonDocument doc(QJsonObject::fromVariantMap(config));
         file.write(doc.toJson());
     }
+}
+
+void DataManager::setDataDir(const QString& new_dir) {
+    if (new_dir.isEmpty() || new_dir == data_dir) return;
+    
+    QDir dir(new_dir);
+    if (!dir.exists()) {
+        dir.mkpath(".");
+    }
+    data_dir = new_dir;
 }

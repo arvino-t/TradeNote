@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.23)
-project(TradeNote VERSION 1.0.0 LANGUAGES CXX)
+project(TradeNote VERSION 1.1.0 LANGUAGES CXX)
 
 # Configure version file
 configure_file(
@@ -60,8 +60,14 @@ if(WIN32)
         DESTINATION data
     )
 else()
-    install(DIRECTORY app/data
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/TradeNote
+    # Install desktop file
+    install(FILES tradenote.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+    )
+    
+    # Install icon
+    install(FILES tradenote.png
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps
     )
 endif()
 
